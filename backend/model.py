@@ -2,6 +2,8 @@ import random
 import os
 import joblib
 import numpy as np
+import json
+
 
 class BlackoutPredictor:
     """
@@ -39,3 +41,18 @@ class BlackoutPredictor:
         else:
             # Fallback to random prediction
             return round(random.uniform(0, 100), 2)
+
+    def get_metrics(self):
+        """
+        Load and return the saved model evaluation metrics from 'metrics.json'.
+
+        Returns:
+            dict: Dictionary containing accuracy, precision, recall, f1_score, and confusion_matrix.
+        """
+        metrics_path = "metrics.json"
+        if os.path.exists(metrics_path):
+            with open(metrics_path, 'r') as f:
+                metrics = json.load(f)
+            return metrics
+        else:
+            return None

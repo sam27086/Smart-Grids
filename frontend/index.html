@@ -22,11 +22,43 @@
             <label for="feature3">Feature 3 (e.g., Load):</label>
             <input type="number" id="feature3" name="feature3" required />
 
-        <button type="submit">Predict</button>
-        <button type="button" id="clear-data-btn" style="margin-left: 10px;">Clear All Data</button>
-    </form>
-    <div id="result"></div>
-</div>
+            <button type="submit">Predict</button>
+            <button type="button" id="clear-data-btn">Clear Data</button>
+        </form>
+        <div id="result"></div>
+
+        <div id="charts-container" style="margin-top: 2rem;">
+            <canvas id="lineChart"></canvas>
+            <canvas id="barChart"></canvas>
+        </div>
+
+        <div id="metrics-container" style="margin-top: 2rem;">
+            <h2>Model Evaluation Metrics</h2>
+            <div style="display: flex; gap: 2rem; justify-content: space-around;">
+                <div>
+                    <h3>Metrics Table</h3>
+                    <table id="metrics-table" class="metrics-table" border="1" cellpadding="5" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Metrics rows will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div>
+                    <h3>Confusion Matrix</h3>
+                    <table id="confusion-matrix" class="confusion-matrix" border="1" cellpadding="5" cellspacing="0">
+                        <!-- Confusion matrix rows will be inserted here -->
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="script.js"></script>
 </body>

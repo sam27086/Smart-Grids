@@ -3,22 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultDiv = document.getElementById('result');
     const clearBtn = document.getElementById('clear-data-btn');
 
-    // Create canvas elements for charts
-    const container = document.querySelector('.container');
-
-    const chartContainer = document.createElement('div');
-    chartContainer.style.marginTop = '2rem';
-
-    const lineCanvas = document.createElement('canvas');
-    lineCanvas.id = 'lineChart';
-    chartContainer.appendChild(lineCanvas);
-
-    const barCanvas = document.createElement('canvas');
-    barCanvas.id = 'barChart';
-    chartContainer.appendChild(barCanvas);
-
-    container.appendChild(chartContainer);
-
     let lineChart, barChart;
 
     // Fetch and render prediction history charts
@@ -29,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!Array.isArray(data) || data.length === 0) {
                 resultDiv.textContent = 'No prediction history available to display charts.';
-                // Clear existing charts if any
                 if (lineChart) {
                     lineChart.destroy();
                     lineChart = null;
@@ -41,15 +24,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Prepare data for charts
             const labels = data.map(item => new Date(item.timestamp).toLocaleString()).reverse();
             const predictions = data.map(item => item.prediction).reverse();
 
-            // Destroy existing charts if any
             if (lineChart) lineChart.destroy();
             if (barChart) barChart.destroy();
 
-            // Line chart for prediction over time
             lineChart = new Chart(document.getElementById('lineChart').getContext('2d'), {
                 type: 'line',
                 data: {
@@ -75,7 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // Bar chart for prediction distribution
             const bins = new Array(10).fill(0);
             predictions.forEach(p => {
                 const index = Math.min(Math.floor(p / 10), 9);
@@ -109,8 +88,81 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Initial chart rendering
+    // Fetch and render model evaluation metrics
+    async function fetchAndRenderMetrics() {
+        try {
+            console.log('Fetching metrics...');
+            const response = await fetch('/metrics');
+            console.log('Response status:', response.status);
+            if (!response.ok) {
+                console.log('Response not ok, hiding tables');
+                document.getElementById('metrics-table').style.display = 'none';
+                document.getElementById('confusion-matrix').style.display = 'none';
+                return;
+            }
+            const metrics = await response.json();
+            console.log('Metrics data:', metrics);
+
+
+            const metricsTableBody = document.querySelector('#metrics-table tbody');
+            metricsTableBody.innerHTML = '';
+
+            const metricNames = ['accuracy', 'precision', 'recall', 'f1_score'];
+            metricNames.forEach(name => {
+                const tr = document.createElement('tr');
+                const tdName = document.createElement('td');
+                tdName.textContent = name.charAt(0).toUpperCase() + name.slice(1).replace('_', ' ');
+                const tdValue = document.createElement('td');
+                tdValue.textContent = (parseFloat(metrics[name]) * 100).toFixed(2) + '%';
+                tr.appendChild(tdName);
+                tr.appendChild(tdValue);
+                metricsTableBody.appendChild(tr);
+            });
+
+
+            // Render confusion matrix
+            const cmTable = document.getElementById('confusion-matrix');
+            cmTable.innerHTML = '';
+            const cm = metrics.confusion_matrix;
+
+            // Header row
+            const headerRow = document.createElement('tr');
+            headerRow.appendChild(document.createElement('th')); // empty corner
+            const predLabels = ['Predicted No Blackout', 'Predicted Blackout'];
+            for (let i = 0; i < cm.length; i++) {
+                const th = document.createElement('th');
+                th.textContent = predLabels[i] || 'Pred ' + i;
+                headerRow.appendChild(th);
+            }
+            cmTable.appendChild(headerRow);
+
+            // Data rows
+            const actualLabels = ['Actual No Blackout', 'Actual Blackout'];
+            for (let i = 0; i < cm.length; i++) {
+                const row = document.createElement('tr');
+                const th = document.createElement('th');
+                th.textContent = actualLabels[i] || 'Actual ' + i;
+                row.appendChild(th);
+                for (let j = 0; j < cm[i].length; j++) {
+                    const td = document.createElement('td');
+                    td.textContent = cm[i][j];
+                    row.appendChild(td);
+                }
+                cmTable.appendChild(row);
+            }
+
+
+            document.getElementById('metrics-table').style.display = '';
+            document.getElementById('confusion-matrix').style.display = '';
+
+        } catch (error) {
+            console.error('Error fetching metrics:', error);
+        }
+    }
+
+    // Initial rendering
     fetchAndRenderCharts();
+    fetchAndRenderMetrics();
 
     // Handle form submission
     form.addEventListener('submit', async (e) => {
@@ -147,8 +199,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             resultDiv.textContent = `Prediction for ${data.location}: Blackout chance is ${data.blackout_chance}%`;
 
-            // Refresh charts with new data
+            // Refresh charts and metrics with new data
             fetchAndRenderCharts();
+            fetchAndRenderMetrics();
 
         } catch (error) {
             resultDiv.textContent = 'Error during prediction.';
@@ -165,8 +218,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             resultDiv.textContent = data.message;
 
-            // Refresh charts after clearing data
+            // Refresh charts and metrics after clearing data
             fetchAndRenderCharts();
+            fetchAndRenderMetrics();
 
         } catch (error) {
             resultDiv.textContent = 'Error clearing data.';
